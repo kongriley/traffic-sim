@@ -1,0 +1,40 @@
+<routes>
+    <vType id="car" vClass="passenger" maxSpeed="5" speedFactor="1.3" speedDev="0.1" sigma="0.1" departPosLat="free" color="0, 0, 255"/>
+
+    <route id="w11" edges="win e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park1 e11 e12 e13 drop1 e14 e15 e16 e17 e18 e19 e20 e21 wout" />
+    <route id="w12" edges="win e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park2a park2b park2c e11 e12 e13 drop1 e14 e15 e16 e17 e18 e19 e20 e21 wout" />
+    <route id="w21" edges="win e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park1 e11 e12 e13 drop2 e14 e15 e16 e17 e18 e19 e20 e21 wout" />
+    <route id="w22" edges="win e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park2a park2b park2c e11 e12 e13 drop2 e14 e15 e16 e17 e18 e19 e20 e21 wout" />
+    
+    <route id="e11" edges="ein e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park1 e11 e12 e13 drop1 e14 e15 e16 e17 e18 e19 e20 e21 eout" />
+    <route id="e12" edges="ein e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park2a park2b park2c e11 e12 e13 drop1 e14 e15 e16 e17 e18 e19 e20 e21 eout" />
+    <route id="e21" edges="ein e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park1 e11 e12 e13 drop2 e14 e15 e16 e17 e18 e19 e20 e21 eout" />
+    <route id="e22" edges="ein e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park2a park2b park2c e11 e12 e13 drop2 e14 e15 e16 e17 e18 e19 e20 e21 eout" />
+
+    <route id="s11" edges="sin e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park1 e11 e12 e13 drop1 e14 e15 e16 e17 e18 e19 e20 e21 sout" />
+    <route id="s12" edges="sin e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park2a park2b park2c e11 e12 e13 drop1 e14 e15 e16 e17 e18 e19 e20 e21 sout" />
+    <route id="s21" edges="sin e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park1 e11 e12 e13 drop2 e14 e15 e16 e17 e18 e19 e20 e21 sout" />
+    <route id="s22" edges="sin e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 park2a park2b park2c e11 e12 e13 drop2 e14 e15 e16 e17 e18 e19 e20 e21 sout" />
+
+    <flow id="car_w_11" type="car" begin="0" end="5000" number="125" route="w11"/>
+    <flow id="car_w_12" type="car" begin="0" end="5000" number="125" route="w12"/>
+    <flow id="car_w_21" type="car" begin="0" end="5000" number="125" route="w21"/>
+    <flow id="car_w_22" type="car" begin="0" end="5000" number="125" route="w22"/>
+
+    <flow id="car_e_11" type="car" begin="0" end="5000" number="125" route="e11"/>
+    <flow id="car_e_12" type="car" begin="0" end="5000" number="125" route="e12"/>
+    <flow id="car_e_21" type="car" begin="0" end="5000" number="125" route="e21"/>
+    <flow id="car_e_22" type="car" begin="0" end="5000" number="125" route="e22"/>
+    
+    <flow id="car_s_11" type="car" begin="0" end="5000" number="150" route="s11"/>
+    <flow id="car_s_12" type="car" begin="0" end="5000" number="150" route="s12"/>
+    <flow id="car_s_21" type="car" begin="0" end="5000" number="150" route="s21"/>
+    <flow id="car_s_22" type="car" begin="0" end="5000" number="150" route="s22"/>
+
+    <!-- <personFlow id="ped1" begin="250" end="3950" number="400">
+        <walk from="-e14" to="ped3" />
+    </personFlow>
+    <personFlow id="ped2" begin="350" end="3950" number="600">
+        <walk from="drop2b" to="ped3" />
+    </personFlow> -->
+</routes>

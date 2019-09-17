@@ -1,0 +1,6 @@
+<configuration>
+   <input>
+       <net-file value="vcs2.net.xml"/>
+       <route-files value="vcs2.rou.xml"/>
+   </input>
+</configuration>
