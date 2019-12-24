@@ -5,32 +5,101 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
-sumoBinary = "sumo-gui.exe"
+gui = False # use gui??
+
+if gui:
+    sumoBinary = "sumo-gui.exe"
+else:
+    sumoBinary = "sumo"
 sumoCmd = [sumoBinary, "-c", "vcs2.sumocfg"]
 
 import traci
 
 import matplotlib.pyplot as plt
 import numpy as np
+import random
+import csv
+
+def key(x):
+    return traci.vehicle.getLanePosition(x)
+
+def first(ids):
+    curr = None
+    if len(ids) == 0:
+        return 100000
+    return traci.vehicle.getLanePosition(min(ids, key=key))
+
+def setLight(q1, q2, qp):
+    if q1 > q2:
+        if q1 > qp:
+            traci.trafficlight.setPhase("jun", 1)
+        else: 
+            traci.trafficlight.setPhase("jun", 3)
+    else:
+        if q2 > qp:
+            traci.trafficlight.setPhase("jun", 2)
+        else: 
+            traci.trafficlight.setPhase("jun", 3)
 
 stop = 20
-times = [15, 20, 30, 40, 60]
-reds = [5, 5, 5, 5]
 omega = 3
-end = 1000
+end = 2000
+trials = 100
 
-c = 0
-sub = 0
-pcount = 0
+Q = np.zeros((end, 3))
+epsilon = 0.2
+lr = 0.1
+gamma = 0.9
 
-xs = np.repeat(np.arange(end)[:, np.newaxis], len(times), axis=1)
-ys = np.zeros((end, len(times)))
+xs = np.arange(end)
+ys = np.zeros(end)
 
-index = 0
-for time, red in zip(times, reds):
+with open('count-export.csv') as f:
+    read = list(csv.reader(f, delimiter=','))[1:]
+    read = [x[2] for x in read]
+    read = [s[4:] for s in read]
+    read = [60*int(s[:2])+int(s[3:]) - 812 for s in read]
+
+for t in range(trials): # number of trials, useful for randomness
+    c = 0
+    sub = 0
+    pcount = 0
+    carc = 0
+    last_stop = 0
+
+    prev_score = 0
+    prev_action = 0
+
+    # if gui:
+    #     traci.gui.setSchema(traci.gui.DEFAULT_VIEW, "real world")
     traci.start(sumoCmd)
-    traci.gui.setSchema(traci.gui.DEFAULT_VIEW, "real world")
+    car_list = read.copy()
     for step in range(end):
+        rchoice = ['w11', 'w12', 'w21', 'w22', 'e11', 'e12', 'e21', 'e22', 's11', 's12', 's21', 's22']
+        
+        # add cars (data-based)
+        if car_list[0] == step:
+            route_name = random.choice(rchoice)
+            traci.vehicle.add('car'+str(step), route_name, typeID='car')
+            car_list = car_list[1:]
+        
+        # add cars (flow-based)
+        # if step < 900:
+        #     if step % 7 == 0:
+        #         traci.vehicle.add('car'+str(carc), random.choice(rchoice), typeID='car')
+        #         carc += 1
+        # elif step < 1800:
+        #     if step % 3 == 0:
+        #         traci.vehicle.add('car'+str(carc), random.choice(rchoice), typeID='car')
+        #         carc += 1
+        # elif step < 2700:
+        #     if step % 5 == 0:
+        #         traci.vehicle.add('car'+str(carc), random.choice(rchoice), typeID='car')
+        #         carc += 1
+        
+        # if step == 100:
+        #     traci.vehicle.add('train', 'rt', typeID='t')
+
         traci.simulationStep()
         # print(str(step))
 
@@ -52,7 +121,9 @@ for time, red in zip(times, reds):
         drops22 = [drop for drop in drops if "22" in traci.vehicle.getRouteID(drop)]
         # print(len(drops11))
 
-        if q1 > q2:
+        id1 = traci.lane.getLastStepVehicleIDs("drop1_1")
+        id2 = traci.lane.getLastStepVehicleIDs("drop2_0")
+        if first(id1) < first(id2):
             # switch route 1 to route 2
             for car in drops11:
                 d = traci.vehicle.getRouteID(car)[0]
@@ -60,7 +131,7 @@ for time, red in zip(times, reds):
             for car in drops12:
                 d = traci.vehicle.getRouteID(car)[0]
                 traci.vehicle.setRouteID(car, d+"22")
-        elif q1 < q2:
+        elif first(id1) > first(id2):
             # switch route 2 to route 1
             for car in drops21:
                 d = traci.vehicle.getRouteID(car)[0]
@@ -85,25 +156,33 @@ for time, red in zip(times, reds):
                 c += 1
                 pcount += 1
                 traci.vehicle.setColor(car, (0, 255, 0))
-
-        # traffic light
-        if (step + red) % time == 0:
-            if q1 > q2:
-                if q1 > qp:
-                    traci.trafficlight.setPhase("jun", 1)
-                else: 
-                    traci.trafficlight.setPhase("jun", 3)
-            else:
-                if q2 > qp:
-                    traci.trafficlight.setPhase("jun", 2)
-                else: 
-                    traci.trafficlight.setPhase("jun", 3)
-        elif (step + red) % time == step:
-            traci.trafficlight.setPhase("jun", 0)
+        
+        
+        # traffic light WITH Q-LEARNING!
+        waiting_cars = traci.lane.getLastStepVehicleIDs("drop1_1")+traci.lane.getLastStepVehicleIDs("drop2_0")
+        waiting_people = traci.edge.getLastStepPersonIDs("ped3")
+        total_score = 0
+        for curr in waiting_cars:
+            total_score += traci.vehicle.getWaitingTime(curr)
+        for curr in waiting_people:
+            total_score += traci.person.getWaitingTime(curr)
+        
+        reward = total_score - prev_score # reward = total waiting time of all people/cars
+        if random.uniform(0, 1) < epsilon:
+            action = random.randint(0, 2) # random action (explore)
+        else:
+            action = np.argmax(Q[step, :]) # best action (exploit)
+        traci.trafficlight.setPhase("jun", action+1)
+        if step > 0:
+            # algorithm for Q-learning
+            Q[step-1, prev_action] = Q[step-1, prev_action] + lr * (reward + gamma * np.max(Q[step, :]) - Q[step-1, prev_action])
+        
+        prev_action = action
+        prev_score = total_score
 
         # first queue
-        x = traci.lane.getLastStepVehicleNumber("park1_1")
-        y = traci.lane.getLastStepVehicleNumber("park2a_1")+traci.lane.getLastStepVehicleNumber("park2b_1")+traci.lane.getLastStepVehicleNumber("park2c_1")
+        x = traci.lane.getLastStepVehicleIDs("park1_1")
+        y = traci.lane.getLastStepVehicleIDs("park2a_1")
         
         parks = traci.edge.getLastStepVehicleIDs("e10")
         # separate deciding by dropoff
@@ -113,14 +192,14 @@ for time, red in zip(times, reds):
         parks21 = [park for park in parks if "21" in traci.vehicle.getRouteID(park)]
         parks22 = [park for park in parks if "22" in traci.vehicle.getRouteID(park)]
         
-        if x > y:
+        if first(x) < first(y):
             for car in parks11:
                 d = traci.vehicle.getRouteID(car)[0]
                 traci.vehicle.setRouteID(car, d+"12")
             for car in parks21:
                 d = traci.vehicle.getRouteID(car)[0]
                 traci.vehicle.setRouteID(car, d+"22")
-        elif x < y:
+        elif first(x) > first(y):
             for car in parks12:
                 d = traci.vehicle.getRouteID(car)[0]
                 traci.vehicle.setRouteID(car, d+"11")
@@ -128,18 +207,16 @@ for time, red in zip(times, reds):
                 d = traci.vehicle.getRouteID(car)[0]
                 traci.vehicle.setRouteID(car, d+"21")
         
-        ys[step, index] = pcount
+        ys[step] += pcount
     traci.close()
-    index += 1
 
-index = 0
-for x, y in zip(xs, ys):
-    plt.plot(x, y, label='Duration of '+str(times[index])+'s')
-    index += 1
-plt.xlabel('Number of students dropped')
-plt.ylabel('Time (s)')
+base = np.load('baseline.npy')
+plt.plot(xs, base, label='Baseline')
+plt.plot(xs, ys, label='Q-learning')
+plt.ylabel('Number of students dropped')
+plt.xlabel('Time (s)')
 
-plt.title("Total number of dropped students vs. time")
+plt.title("Results of Q-learning")
 plt.legend()
 
 plt.show()
