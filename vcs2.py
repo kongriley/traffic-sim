@@ -44,14 +44,19 @@ def setLight(q1, q2, qp):
 stop = 20
 omega = 3
 end = 2000
-trials = 100
+trials = 50
+cum_trials = 0
 
-Q = np.zeros((end, 3))
+try:
+    Q = np.load('q.npy')
+except:
+    Q = np.zeros((end, 3))
 epsilon = 0.2
 lr = 0.1
 gamma = 0.9
 
 xs = np.arange(end)
+base_ys = np.zeros(end)
 ys = np.zeros(end)
 
 with open('count-export.csv') as f:
@@ -60,7 +65,7 @@ with open('count-export.csv') as f:
     read = [s[4:] for s in read]
     read = [60*int(s[:2])+int(s[3:]) - 812 for s in read]
 
-for t in range(trials): # number of trials, useful for randomness
+for t in range(trials+1): # number of trials, useful for randomness
     c = 0
     sub = 0
     pcount = 0
@@ -158,27 +163,30 @@ for t in range(trials): # number of trials, useful for randomness
                 traci.vehicle.setColor(car, (0, 255, 0))
         
         
-        # traffic light WITH Q-LEARNING!
-        waiting_cars = traci.lane.getLastStepVehicleIDs("drop1_1")+traci.lane.getLastStepVehicleIDs("drop2_0")
-        waiting_people = traci.edge.getLastStepPersonIDs("ped3")
-        total_score = 0
-        for curr in waiting_cars:
-            total_score += traci.vehicle.getWaitingTime(curr)
-        for curr in waiting_people:
-            total_score += traci.person.getWaitingTime(curr)
-        
-        reward = total_score - prev_score # reward = total waiting time of all people/cars
-        if random.uniform(0, 1) < epsilon:
-            action = random.randint(0, 2) # random action (explore)
-        else:
-            action = np.argmax(Q[step, :]) # best action (exploit)
-        traci.trafficlight.setPhase("jun", action+1)
-        if step > 0:
-            # algorithm for Q-learning
-            Q[step-1, prev_action] = Q[step-1, prev_action] + lr * (reward + gamma * np.max(Q[step, :]) - Q[step-1, prev_action])
-        
-        prev_action = action
-        prev_score = total_score
+        if t == 0:
+            setLight(q1, q2, qp)
+        else: 
+            # traffic light WITH Q-LEARNING!
+            waiting_cars = traci.lane.getLastStepVehicleIDs("drop1_1")+traci.lane.getLastStepVehicleIDs("drop2_0")
+            waiting_people = traci.edge.getLastStepPersonIDs("ped3")
+            total_score = 0
+            for curr in waiting_cars:
+                total_score += traci.vehicle.getWaitingTime(curr)
+            for curr in waiting_people:
+                total_score += traci.person.getWaitingTime(curr)
+            
+            reward = -(total_score - prev_score) # reward = total waiting time of all people/cars
+            if random.uniform(0, 1) < epsilon:
+                action = random.randint(0, 2) # random action (explore)
+            else:
+                action = np.argmax(Q[step, :]) # best action (exploit)
+            traci.trafficlight.setPhase("jun", action+1)
+            if step > 0:
+                # algorithm for Q-learning
+                Q[step-1, prev_action] = Q[step-1, prev_action] + lr * (reward + gamma * np.max(Q[step, :]) - Q[step-1, prev_action])
+            
+            prev_action = action
+            prev_score = total_score
 
         # first queue
         x = traci.lane.getLastStepVehicleIDs("park1_1")
@@ -207,12 +215,15 @@ for t in range(trials): # number of trials, useful for randomness
                 d = traci.vehicle.getRouteID(car)[0]
                 traci.vehicle.setRouteID(car, d+"21")
         
-        ys[step] += pcount
+        if t == 0:
+            base_ys[step] = pcount
+        else: 
+            ys[step] = pcount
     traci.close()
+    np.save('q', Q)
 
-base = np.load('baseline.npy')
-plt.plot(xs, base, label='Baseline')
-plt.plot(xs, ys, label='Q-learning')
+plt.plot(xs, base_ys, label='Baseline')
+plt.plot(xs, ys, label='Q-learning ('+str(trials+cum_trials)+' episodes)')
 plt.ylabel('Number of students dropped')
 plt.xlabel('Time (s)')
 
