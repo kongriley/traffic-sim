@@ -56,12 +56,12 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 50
+trials = 30
 cum_trials = 0
 
 stop = 20
 omega = 3
-end = 1300
+end = 2000
 wmax = 80
 
 try:
@@ -77,8 +77,13 @@ lr = 0.1
 gamma = 0.8
 
 xs = np.arange(end)
+episode_xs = np.arange(trials)
 base_ys = np.zeros(end)
 enter_ys = np.zeros(end)
+wait_ys = np.zeros(trials)
+reward_ys = np.zeros(trials)
+wait2_ys = np.zeros(trials)
+reward2_ys = np.zeros(trials)
 ys = np.zeros(end)
 
 with open('count-export.csv') as f:
@@ -87,7 +92,10 @@ with open('count-export.csv') as f:
     read = [s[4:] for s in read]
     read = [60*int(s[:2])+int(s[3:]) - 812 for s in read]
 
-for t in range(trials+2): # number of episodes
+if not testing:
+    trials += 2
+
+for t in range(trials): # number of episodes
     c = 0
     sub = 0
     pcount = 0
@@ -101,6 +109,9 @@ for t in range(trials+2): # number of episodes
     # if gui:
     #     traci.gui.setSchema(traci.gui.DEFAULT_VIEW, "real world")
     traci.start(sumoCmd)
+    state_lengths = [traci.lane.getLength("drop1_1"), traci.lane.getLength("drop2_0"), 1]
+    state_lengths2 = [traci.lane.getLength("sin_0"),traci.lane.getLength("win_0"),traci.lane.getLength("ein_0"),traci.lane.getLength("e21_0")]
+
     car_list = read.copy()
     for step in range(end):
         rchoice = ['w', 'e', 's']
@@ -138,7 +149,6 @@ for t in range(trials+2): # number of episodes
         q2 = traci.lane.getLastStepVehicleNumber("drop2_0")
         # print("drop 1: "+str(q1))
         # print("drop 2: "+str(q2))
-        qp = sum(1 for p in traci.person.getIDList() if traci.person.getNextEdge(p) == ":jun_c0") * omega
         # print("drop p: "+str(qp))
 
         # cars currently deciding
@@ -189,13 +199,14 @@ for t in range(trials+2): # number of episodes
         
         
         if t == 0 and testing == False:
+            pass
             # setLight(q1, q2, qp)
-            if step % 60 == 0:
-                traci.trafficlight.setPhase('jun', 1)
-            elif step % 60 == 20:
-                traci.trafficlight.setPhase('jun', 2)
-            else:
-                traci.trafficlight.setPhase('jun', 3)
+            # if step % 60 == 0:
+            #     traci.trafficlight.setPhase('jun', 1)
+            # elif step % 60 == 20:
+            #     traci.trafficlight.setPhase('jun', 2)
+            # else:
+            #     traci.trafficlight.setPhase('jun', 3)
         elif t == 1 and testing == False:
             setLight(q1, q2, qp)
         else: 
@@ -208,10 +219,12 @@ for t in range(trials+2): # number of episodes
             for curr in waiting_people:
                 wait_time += traci.person.getWaitingTime(curr)
             
-            num_cars = len(waiting_cars)
+            num_cars = len(waiting_cars+waiting_people)
             reward = -(wait_time*num_cars) # reward = total waiting time of all people/cars
 
-            curr_state = (traci.lane.getLastStepVehicleNumber("drop1_1"), traci.lane.getLastStepVehicleNumber("drop2_0"), getPed(':jun_c0'))
+            state_tuple = [traci.lane.getLastStepVehicleNumber("drop1_1"), traci.lane.getLastStepVehicleNumber("drop2_0"), getPed(':jun_c0')]
+            
+            curr_state = [int(x/y) for x, y in zip(state_tuple, state_lengths)]
             # print(total_state)
 
             
@@ -236,10 +249,12 @@ for t in range(trials+2): # number of episodes
             for curr in waiting_cars2:
                 wait_time2 += traci.vehicle.getAccumulatedWaitingTime(curr)
 
-            num_cars2 = len(waiting_cars2)
+            num_cars2 = len(waiting_cars2)/(traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
             reward2 = -(wait_time2*num_cars2) # reward = total waiting time of all people/cars
 
-            curr_state2 = (traci.edge.getLastStepVehicleNumber("sin"),traci.edge.getLastStepVehicleNumber("win"),traci.edge.getLastStepVehicleNumber("ein"),traci.edge.getLastStepVehicleNumber("e21"))
+            state_tuple2 = [traci.edge.getLastStepVehicleNumber("sin"),traci.edge.getLastStepVehicleNumber("win"),traci.edge.getLastStepVehicleNumber("ein"),traci.edge.getLastStepVehicleNumber("e21")]
+            
+            curr_state2 = [int(x/y) for x, y in zip(state_tuple2, state_lengths2)]
 
             if random.uniform(0, 1) < epsilon:
                 action2 = random.randint(0, 3) # random action (explore)
@@ -287,17 +302,40 @@ for t in range(trials+2): # number of episodes
         elif t == 1 and testing == False:
             enter_ys[step] = pcount
         else: 
+            # if t == trials:
+            #     sumoCmd = ["sumo-gui.exe", "-c", "vcs2.sumocfg"]
             ys[step] = pcount
+
+    if t > 1:
+        reward_ys[t-2] = reward
+        reward2_ys[t-2] = reward2
+    
+        np.save('q', Q)
+        np.save('q2', Q2)
+
     traci.close()
-    # np.save('q', Q)
 
-plt.plot(xs, base_ys, label='Baseline')
-# plt.plot(xs, enter_ys, label='Naive')
-plt.plot(xs, ys, label='Q-learning ('+str(trials+cum_trials)+' episodes)')
-plt.ylabel('Number')
-plt.xlabel('Time (s)')
 
-plt.title("Results of Q-learning")
-plt.legend()
+fig, (ax1, ax2) = plt.subplots(2)
+ax1.plot(xs, ys, label='Baseline')
+ax1.plot(xs, base_ys, label='Q-learning')
+ax1.set_title('Results of Q-learning')
+ax1.set(ylabel='Number of cars',xlabel='Time (s)')
+ax1.legend()
+
+ax2.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
+ax2.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
+ax2.set_title('Reward over episodes')
+ax2.set(ylabel='Reward',xlabel='Episode')
+ax2.legend()
+
+# plt.plot(xs, base_ys, label='Baseline')
+# # plt.plot(xs, enter_ys, label='Naive')
+# plt.plot(xs, ys, label='Q-learning ('+str(trials+cum_trials)+' episodes)')
+# plt.ylabel('Number')
+# plt.xlabel('Time (s)')
+
+# plt.title("Results of Q-learning")
+# plt.legend()
 
 plt.show()
