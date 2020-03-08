@@ -56,7 +56,7 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 30
+trials = 3
 cum_trials = 0
 
 stop = 20
@@ -147,6 +147,7 @@ for t in range(trials): # number of episodes
         # queues
         q1 = traci.lane.getLastStepVehicleNumber("drop1_1")
         q2 = traci.lane.getLastStepVehicleNumber("drop2_0")
+        qp = len(traci.edge.getLastStepPersonIDs('ped3'))
         # print("drop 1: "+str(q1))
         # print("drop 2: "+str(q2))
         # print("drop p: "+str(qp))
