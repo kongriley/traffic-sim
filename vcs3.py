@@ -82,6 +82,7 @@ episode_xs = np.arange(trials)
 base_ys = np.zeros(end)
 enter_ys = np.zeros(end)
 wait_ys = np.zeros(end)
+car_ys = np.zeros(end)
 reward_ys = np.zeros(trials)
 wait2_ys = np.zeros(end)
 reward2_ys = np.zeros(trials)
@@ -117,30 +118,47 @@ for t in range(trials): # number of episodes
 
     car_list = read.copy()
     for step in range(end):
+        real_car_num = traci.vehicle.getIDCount()
         rchoice = ['w', 'e', 's']
         
+
         # add cars (data-based)
-        if len(car_list) > 0:
-            while car_list[0] == step:
+        # if len(car_list) > 0:
+        #     while car_list[0] == step:
+        #         route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
+        #         route_name += random.choices(['11', '21', '12', '22'])[0]
+        #         traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
+        #         car_list = car_list[1:]
+        #         if len(car_list) == 0: break
+        #         cum_car += 1
+        
+        # add cars (flow-based)
+        car_rand = random.random()
+        if step < 900:
+            if car_rand < 0.0675:
                 route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
                 route_name += random.choices(['11', '21', '12', '22'])[0]
                 traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
-                car_list = car_list[1:]
+                cum_car += 1
+        elif step < 1800:
+            if car_rand < 0.145141667:
+                route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
+                route_name += random.choices(['11', '21', '12', '22'])[0]
+                traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
+                cum_car += 1
+        elif step < 2700:
+            if car_rand < 0.33375:
+                route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
+                route_name += random.choices(['11', '21', '12', '22'])[0]
+                traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
+                cum_car += 1
+        else:
+            if car_rand < 0.20305556:
+                route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
+                route_name += random.choices(['11', '21', '12', '22'])[0]
+                traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
                 cum_car += 1
         
-        # add cars (flow-based)
-        # if step < 900:
-        #     if step % 7 == 0:
-        #         traci.vehicle.add('car'+str(carc), random.choice(rchoice), typeID='car')
-        #         carc += 1
-        # elif step < 1800:
-        #     if step % 3 == 0:
-        #         traci.vehicle.add('car'+str(carc), random.choice(rchoice), typeID='car')
-        #         carc += 1
-        # elif step < 2700:
-        #     if step % 5 == 0:
-        #         traci.vehicle.add('car'+str(carc), random.choice(rchoice), typeID='car')
-        #         carc += 1
         
         # if step == 100:
         #     traci.vehicle.add('train', 'rt', typeID='t')
@@ -326,6 +344,7 @@ for t in range(trials): # number of episodes
                 wait_ys[step] = wait_time/len(waiting_cars)
             if len(waiting_cars2) > 0:
                 wait2_ys[step] = wait_time2/len(waiting_cars2)
+            car_ys[step] = cum_car
 
     if t > 1:
         pass
@@ -359,9 +378,9 @@ ax2.set_title('Wait time over episodes')
 ax2.set(ylabel='Wait time (s)',xlabel='Episode')
 ax2.legend()
 
-# plt.plot(xs, base_ys, label='Baseline')
+# plt.plot(xs, car_ys)
 # # plt.plot(xs, enter_ys, label='Naive')
-# plt.plot(xs, ys, label='Q-learning ('+str(trials+cum_trials)+' episodes)')
+# # plt.plot(xs, ys, label='Car distribution')
 # plt.ylabel('Number')
 # plt.xlabel('Time (s)')
 
