@@ -57,7 +57,7 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 200
+trials = 1 # number of episodes
 cum_trials = 0
 
 stop = 20
@@ -120,12 +120,13 @@ for t in range(trials): # number of episodes
         rchoice = ['w', 'e', 's']
         
         # add cars (data-based)
-        while car_list[0] == step:
-            route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
-            route_name += random.choices(['11', '21', '12', '22'])[0]
-            traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
-            car_list = car_list[1:]
-            cum_car += 1
+        if len(car_list) > 0:
+            while car_list[0] == step:
+                route_name = random.choices(rchoice, weights=[0.4, 0.1, 0.5])[0]
+                route_name += random.choices(['11', '21', '12', '22'])[0]
+                traci.vehicle.add('car'+str(cum_car), route_name, typeID='car')
+                car_list = car_list[1:]
+                cum_car += 1
         
         # add cars (flow-based)
         # if step < 900:
