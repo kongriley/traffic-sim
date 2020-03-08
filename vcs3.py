@@ -7,6 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
+run_type = 1 # 1 - 4
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -56,7 +57,7 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 3
+trials = 50
 cum_trials = 0
 
 stop = 20
@@ -80,9 +81,9 @@ xs = np.arange(end)
 episode_xs = np.arange(trials)
 base_ys = np.zeros(end)
 enter_ys = np.zeros(end)
-wait_ys = np.zeros(trials)
+wait_ys = np.zeros(end)
 reward_ys = np.zeros(trials)
-wait2_ys = np.zeros(trials)
+wait2_ys = np.zeros(end)
 reward2_ys = np.zeros(trials)
 ys = np.zeros(end)
 
@@ -95,7 +96,9 @@ with open('count-export.csv') as f:
 if not testing:
     trials += 2
 
-for t in range(trials): # number of episodes
+for t in range(trials+2): # number of episodes
+    # if t < 2:
+    #     continue
     c = 0
     sub = 0
     pcount = 0
@@ -306,6 +309,8 @@ for t in range(trials): # number of episodes
             # if t == trials:
             #     sumoCmd = ["sumo-gui.exe", "-c", "vcs2.sumocfg"]
             ys[step] = pcount
+            wait_ys[step] = wait_time
+            wait2_ys[step] = wait_time2
 
     if t > 1:
         reward_ys[t-2] = reward
@@ -317,18 +322,26 @@ for t in range(trials): # number of episodes
     traci.close()
 
 
-fig, (ax1, ax2) = plt.subplots(2)
-ax1.plot(xs, ys, label='Baseline')
-ax1.plot(xs, base_ys, label='Q-learning')
-ax1.set_title('Results of Q-learning')
-ax1.set(ylabel='Number of cars',xlabel='Time (s)')
-ax1.legend()
+# fig, (ax1, ax2) = plt.subplots(2)
+# ax1.plot(xs, ys, label='Baseline')
+# ax1.plot(xs, base_ys, label='Q-learning')
+# ax1.set_title('Results of Q-learning')
+# ax1.set(ylabel='Number of cars',xlabel='Time (s)')
+# ax1.legend()
 
-ax2.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
-ax2.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
-ax2.set_title('Reward over episodes')
-ax2.set(ylabel='Reward',xlabel='Episode')
-ax2.legend()
+# ax2.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
+# ax2.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
+# ax2.set_title('Reward over episodes')
+# ax2.set(ylabel='Reward',xlabel='Episode')
+# ax2.legend()
+
+fig, (ax1) = plt.subplots(1)
+
+ax1.plot(episode_xs, wait_ys, label='Reward of dropoff Q-table')
+ax1.plot(episode_xs, wait2_ys, label='Reward of Monterey Q-table')
+ax1.set_title('Reward over episodes')
+ax1.set(ylabel='Reward',xlabel='Episode')
+ax1.legend()
 
 # plt.plot(xs, base_ys, label='Baseline')
 # # plt.plot(xs, enter_ys, label='Naive')
