@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 1 # 1 - 4
+run_type = 3 # 1 - 3
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -57,12 +57,12 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 50
+trials = 200
 cum_trials = 0
 
 stop = 20
 omega = 3
-end = 2000
+end = 3600
 wmax = 80
 
 try:
@@ -96,7 +96,7 @@ with open('count-export.csv') as f:
 if not testing:
     trials += 2
 
-for t in range(trials+2): # number of episodes
+for t in range(trials): # number of episodes
     # if t < 2:
     #     continue
     c = 0
@@ -224,7 +224,13 @@ for t in range(trials+2): # number of episodes
                 wait_time += traci.person.getWaitingTime(curr)
             
             num_cars = len(waiting_cars+waiting_people)
-            reward = -(wait_time*num_cars) # reward = total waiting time of all people/cars
+            if run_type == 1:
+                reward = -wait_time
+            elif run_type == 2:
+                reward = -0.5*num_cars-0.7*wait_time
+            elif run_type == 3:
+                # num_cars2 /= (traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
+                reward = -(wait_time*num_cars) # reward = total waiting time of all people/cars
 
             state_tuple = [traci.lane.getLastStepVehicleNumber("drop1_1"), traci.lane.getLastStepVehicleNumber("drop2_0"), getPed(':jun_c0')]
             
@@ -253,8 +259,14 @@ for t in range(trials+2): # number of episodes
             for curr in waiting_cars2:
                 wait_time2 += traci.vehicle.getAccumulatedWaitingTime(curr)
 
-            num_cars2 = len(waiting_cars2)/(traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
-            reward2 = -(wait_time2*num_cars2) # reward = total waiting time of all people/cars
+            num_cars2 = len(waiting_cars2)
+            if run_type == 1:
+                reward2 = -wait_time2
+            elif run_type == 2:
+                reward2 = -0.5*num_cars2-0.7*wait_time2
+            elif run_type == 3:
+                num_cars2 /= (traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
+                reward2 = -(wait_time2*num_cars2) # reward = total waiting time of all people/cars
 
             state_tuple2 = [traci.edge.getLastStepVehicleNumber("sin"),traci.edge.getLastStepVehicleNumber("win"),traci.edge.getLastStepVehicleNumber("ein"),traci.edge.getLastStepVehicleNumber("e21")]
             
@@ -309,12 +321,15 @@ for t in range(trials+2): # number of episodes
             # if t == trials:
             #     sumoCmd = ["sumo-gui.exe", "-c", "vcs2.sumocfg"]
             ys[step] = pcount
-            wait_ys[step] = wait_time
-            wait2_ys[step] = wait_time2
+            if len(waiting_cars) > 0:
+                wait_ys[step] = wait_time/len(waiting_cars)
+            if len(waiting_cars2) > 0:
+                wait2_ys[step] = wait_time2/len(waiting_cars2)
 
     if t > 1:
-        reward_ys[t-2] = reward
-        reward2_ys[t-2] = reward2
+        pass
+        # reward_ys[t-2] = reward
+        # reward2_ys[t-2] = reward2
     
         np.save('q', Q)
         np.save('q2', Q2)
@@ -322,12 +337,12 @@ for t in range(trials+2): # number of episodes
     traci.close()
 
 
-# fig, (ax1, ax2) = plt.subplots(2)
-# ax1.plot(xs, ys, label='Baseline')
-# ax1.plot(xs, base_ys, label='Q-learning')
-# ax1.set_title('Results of Q-learning')
-# ax1.set(ylabel='Number of cars',xlabel='Time (s)')
-# ax1.legend()
+fig, (ax1, ax2) = plt.subplots(2)
+ax1.plot(xs, base_ys, label='Baseline')
+ax1.plot(xs, ys, label='Q-learning')
+ax1.set_title('Results of Q-learning')
+ax1.set(ylabel='Number of cars',xlabel='Time (s)')
+ax1.legend()
 
 # ax2.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
 # ax2.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
@@ -335,13 +350,13 @@ for t in range(trials+2): # number of episodes
 # ax2.set(ylabel='Reward',xlabel='Episode')
 # ax2.legend()
 
-fig, (ax1) = plt.subplots(1)
+# fig, (ax1) = plt.subplots(1)
 
-ax1.plot(episode_xs, wait_ys, label='Reward of dropoff Q-table')
-ax1.plot(episode_xs, wait2_ys, label='Reward of Monterey Q-table')
-ax1.set_title('Reward over episodes')
-ax1.set(ylabel='Reward',xlabel='Episode')
-ax1.legend()
+ax2.plot(xs, wait_ys, label='Wait time of dropoff Q-table')
+ax2.plot(xs, wait2_ys, label='Wait time of Monterey Q-table')
+ax2.set_title('Wait time over episodes')
+ax2.set(ylabel='Wait time (s)',xlabel='Episode')
+ax2.legend()
 
 # plt.plot(xs, base_ys, label='Baseline')
 # # plt.plot(xs, enter_ys, label='Naive')
