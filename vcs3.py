@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 3 # 1 - 3
+run_type = 1 # 1 - 4
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -100,6 +100,7 @@ if not testing:
     trials += 2
 
 for t in range(trials): # number of episodes
+    # if t == 1: continue
     print('Episode #'+str(t))
     # if t < 2:
     #     continue
@@ -259,9 +260,11 @@ for t in range(trials): # number of episodes
             elif run_type == 3:
                 # num_cars2 /= (traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
                 reward = -(wait_time*num_cars) # reward = total waiting time of all people/cars
-            
-            if wait_time > 50:
-                reward *= 50 - wait_time
+            elif run_type == 4:
+                reward = -num_cars
+
+            if wait_time > 50 and run_type != 2 and run_type != 4:
+                reward *= wait_time - 50
 
             state_tuple = [traci.lane.getLastStepVehicleNumber("drop1_1"), traci.lane.getLastStepVehicleNumber("drop2_0"), getPed(':jun_c0')]
             
@@ -295,9 +298,11 @@ for t in range(trials): # number of episodes
             elif run_type == 3:
                 num_cars2 /= (traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
                 reward2 = -(wait_time2*num_cars2) # reward = total waiting time of all people/cars
-            
-            if wait_time2 > 50:
-                reward2 *= 50 - wait_time2
+            elif run_type == 4:
+                reward2 = -num_cars2
+
+            if wait_time2 > 50 and run_type != 2 and run_type != 4:
+                reward2 *= wait_time2 - 50
 
             state_tuple2 = [traci.edge.getLastStepVehicleNumber("sin"),traci.edge.getLastStepVehicleNumber("win"),traci.edge.getLastStepVehicleNumber("ein"),traci.edge.getLastStepVehicleNumber("e21")]
             
@@ -364,8 +369,8 @@ for t in range(trials): # number of episodes
 
     if t > 1:
         pass
-        # reward_ys[t-2] = reward
-        # reward2_ys[t-2] = reward2
+        reward_ys[t-2] = reward
+        reward2_ys[t-2] = reward2
     
         np.save('q', Q)
         np.save('q2', Q2)
@@ -376,21 +381,32 @@ np.save('ys'+str(run_type), ys)
 
 plt.figure()
 # fig, (ax1, ax2) = plt.subplots(2)
-plt.plot(xs, base_ys, label='Baseline')
 plt.plot(xs, ys, label='Q-learning')
+plt.annotate(ys[-1], (xs[-1], ys[-1]))
+plt.plot(xs, base_ys, label='Baseline')
+plt.annotate(base_ys[-1], (xs[-1], base_ys[-1]))
 if run_type == 1 or run_type == 2:
     plt.title('Results of Q-learning with run type R'+str(run_type))
-else:
+elif run_type == 3:
     plt.title('Results of Q-learning with novel run type')
+else:
+    plt.title('Results of Q-learning with run type R4')
 plt.ylabel('Number of cars')
 plt.xlabel('Time (s)')
 plt.legend()
 
-# ax2.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
-# ax2.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
-# ax2.set_title('Reward over episodes')
-# ax2.set(ylabel='Reward',xlabel='Episode')
-# ax2.legend()
+plt.figure()
+plt.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
+plt.annotate(reward_ys[-1], (episode_xs[-1], reward_ys[-1]))
+plt.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
+plt.annotate(reward2_ys[-1], (episode_xs[-1], reward2_ys[-1]))
+if run_type == 1 or run_type == 2:
+    plt.title('Reward of each episode with run type R'+str(run_type))
+else:
+    plt.title('Reward of each episode with novel run type')
+plt.ylabel('Reward')
+plt.xlabel('Episode')
+plt.legend()
 
 # fig, (ax1) = plt.subplots(1)
 
@@ -410,8 +426,10 @@ plt.plot(xs, wait2_ys, label='Wait time of Q-table')
 plt.plot(xs, base_wait2_ys, label='Wait time of baseline')
 if run_type == 1 or run_type == 2:
     plt.title('Wait time of Monterey intersection with run type R'+str(run_type))
+elif run_type == 3:
+    plt.title('Results of Q-learning with novel run type')
 else:
-    plt.title('Wait time of Monterey intersection with novel run type')
+    plt.title('Results of Q-learning with run type R4')
 plt.ylabel('Wait time (s)')
 plt.xlabel('Time (s)')
 plt.legend()
