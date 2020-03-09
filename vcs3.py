@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 3 # 1 (W), 2 (L+W), 3 (W*L), 4 (L)
+run_type = 4 # 1 (W), 2 (L+W), 3 (W*L), 4 (L)
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -65,14 +65,14 @@ omega = 3
 end = 3600
 wmax = 80
 
-try:
-    Q = np.load('q.npy')
-except:
-    Q = np.random.rand(wmax, wmax, wmax, 4)
-try:
-    Q2 = np.load('q2.npy')
-except:
-    Q2 = np.random.rand(wmax, wmax, wmax, wmax, 4)
+# try:
+#     Q = np.load('q.npy')
+# except:
+Q = np.random.rand(wmax, wmax, wmax, 4)
+# try:
+#     Q2 = np.load('q2.npy')
+# except:
+Q2 = np.random.rand(wmax, wmax, wmax, wmax, 4)
 epsilon = 0.05
 lr = 0.1
 gamma = 0.8
@@ -372,12 +372,13 @@ for t in range(trials): # number of episodes
         reward_ys[t-2] = reward
         reward2_ys[t-2] = reward2
     
-        np.save('q', Q)
-        np.save('q2', Q2)
+        # np.save('q', Q)
+        # np.save('q2', Q2)
 
     traci.close()
 
 np.save('ys'+str(run_type), ys)
+np.save('base', base_ys)
 
 plt.figure()
 # fig, (ax1, ax2) = plt.subplots(2)
@@ -402,8 +403,10 @@ plt.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
 plt.annotate(reward2_ys[-1], (episode_xs[-1], reward2_ys[-1]))
 if run_type == 1 or run_type == 2:
     plt.title('Reward of each episode with run type R'+str(run_type))
-else:
+elif run_type == 3:
     plt.title('Reward of each episode with novel run type')
+else:
+    plt.title('Reward of each episode with run type R4')
 plt.ylabel('Reward')
 plt.xlabel('Episode')
 plt.legend()
@@ -415,8 +418,10 @@ plt.plot(xs, wait_ys, label='Wait time of Q-table')
 plt.plot(xs, base_wait_ys, label='Wait time of baseline')
 if run_type == 1 or run_type == 2:
     plt.title('Wait time of dropoff intersection with run type R'+str(run_type))
-else:
+elif run_type == 3:
     plt.title('Wait time of dropoff intersection with novel run type')
+else:
+    plt.title('Wait time of dropoff intersection with run type R4')
 plt.ylabel('Wait time (s)')
 plt.xlabel('Time (s)')
 plt.legend()
@@ -427,9 +432,9 @@ plt.plot(xs, base_wait2_ys, label='Wait time of baseline')
 if run_type == 1 or run_type == 2:
     plt.title('Wait time of Monterey intersection with run type R'+str(run_type))
 elif run_type == 3:
-    plt.title('Results of Q-learning with novel run type')
+    plt.title('Wait time of Monterey intersection with novel run type')
 else:
-    plt.title('Results of Q-learning with run type R4')
+    plt.title('Wait time of Monterey intersection with run type R4')
 plt.ylabel('Wait time (s)')
 plt.xlabel('Time (s)')
 plt.legend()
