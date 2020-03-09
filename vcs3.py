@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 1 # 1 - 4
+run_type = 3 # 1 (W), 2 (L+W), 3 (W*L), 4 (L)
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -264,7 +264,7 @@ for t in range(trials): # number of episodes
                 reward = -num_cars
 
             if wait_time > 50 and run_type != 2 and run_type != 4:
-                reward *= wait_time - 50
+                reward -= wait_time - 50
 
             state_tuple = [traci.lane.getLastStepVehicleNumber("drop1_1"), traci.lane.getLastStepVehicleNumber("drop2_0"), getPed(':jun_c0')]
             
@@ -302,7 +302,7 @@ for t in range(trials): # number of episodes
                 reward2 = -num_cars2
 
             if wait_time2 > 50 and run_type != 2 and run_type != 4:
-                reward2 *= wait_time2 - 50
+                reward2 -= wait_time2 - 50
 
             state_tuple2 = [traci.edge.getLastStepVehicleNumber("sin"),traci.edge.getLastStepVehicleNumber("win"),traci.edge.getLastStepVehicleNumber("ein"),traci.edge.getLastStepVehicleNumber("e21")]
             
@@ -350,17 +350,17 @@ for t in range(trials): # number of episodes
                 traci.vehicle.setRouteID(car, d+"21")
         
         if t == 0 and testing == False:
-            base_ys[step] = pcount
+            base_ys[step] = pcount*2
             if len(waiting_cars) > 0:
                 base_wait_ys[step] = wait_time/len(waiting_cars)
             if len(waiting_cars2) > 0:
                 base_wait2_ys[step] = wait_time2/len(waiting_cars2)
         elif t == 1 and testing == False:
-            enter_ys[step] = pcount
+            enter_ys[step] = pcount*2
         else: 
             # if t == trials:
             #     sumoCmd = ["sumo-gui.exe", "-c", "vcs2.sumocfg"]
-            ys[step] = pcount
+            ys[step] = pcount*2
             if len(waiting_cars) > 0:
                 wait_ys[step] = wait_time/len(waiting_cars)
             if len(waiting_cars2) > 0:
