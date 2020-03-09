@@ -238,7 +238,7 @@ for t in range(trials): # number of episodes
             waiting_people = traci.edge.getLastStepPersonIDs("ped3")
             wait_time = 0
             for curr in waiting_cars:
-                wait_time += traci.vehicle.getAccumulatedWaitingTime(curr)
+                wait_time += traci.vehicle.getWaitingTime(curr)
             for curr in waiting_people:
                 wait_time += traci.person.getWaitingTime(curr)
             
@@ -276,7 +276,7 @@ for t in range(trials): # number of episodes
             waiting_cars2 = traci.edge.getLastStepVehicleIDs("sin")+traci.edge.getLastStepVehicleIDs("win")+traci.edge.getLastStepVehicleIDs("ein")+traci.edge.getLastStepVehicleIDs("e21")
             wait_time2 = 0
             for curr in waiting_cars2:
-                wait_time2 += traci.vehicle.getAccumulatedWaitingTime(curr)
+                wait_time2 += traci.vehicle.getWaitingTime(curr)
 
             num_cars2 = len(waiting_cars2)
             if run_type == 1:
@@ -356,13 +356,19 @@ for t in range(trials): # number of episodes
 
     traci.close()
 
+np.save('ys'+str(run_type), ys)
 
-fig, (ax1, ax2) = plt.subplots(2)
-ax1.plot(xs, base_ys, label='Baseline')
-ax1.plot(xs, ys, label='Q-learning')
-ax1.set_title('Results of Q-learning')
-ax1.set(ylabel='Number of cars',xlabel='Time (s)')
-ax1.legend()
+plt.figure()
+# fig, (ax1, ax2) = plt.subplots(2)
+plt.plot(xs, base_ys, label='Baseline')
+plt.plot(xs, ys, label='Q-learning')
+if run_type == 1 or run_type == 2:
+    plt.title('Results of Q-learning with run type R'+str(run_type))
+else:
+    plt.title('Results of Q-learning with novel run type')
+plt.ylabel('Number of cars')
+plt.xlabel('Time (s)')
+plt.legend()
 
 # ax2.plot(episode_xs, reward_ys, label='Reward of dropoff Q-table')
 # ax2.plot(episode_xs, reward2_ys, label='Reward of Monterey Q-table')
@@ -372,11 +378,16 @@ ax1.legend()
 
 # fig, (ax1) = plt.subplots(1)
 
-ax2.plot(xs, wait_ys, label='Wait time of dropoff Q-table')
-ax2.plot(xs, wait2_ys, label='Wait time of Monterey Q-table')
-ax2.set_title('Wait time over episodes')
-ax2.set(ylabel='Wait time (s)',xlabel='Episode')
-ax2.legend()
+plt.figure()
+plt.plot(xs, wait_ys, label='Wait time of dropoff Q-table')
+plt.plot(xs, wait2_ys, label='Wait time of Monterey Q-table')
+if run_type == 1 or run_type == 2:
+    plt.title('Wait time with run type R'+str(run_type))
+else:
+    plt.title('Wait time with novel run type')
+plt.ylabel('Wait time (s)')
+plt.xlabel('Time (s)')
+plt.legend()
 
 # plt.plot(xs, car_ys)
 # # plt.plot(xs, enter_ys, label='Naive')
