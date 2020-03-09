@@ -100,7 +100,7 @@ if not testing:
     trials += 2
 
 for t in range(trials): # number of episodes
-    print('Episode #'+t)
+    print('Episode #'+str(t))
     # if t < 2:
     #     continue
     c = 0
