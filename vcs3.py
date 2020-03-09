@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 1 # 1 - 3
+run_type = 3 # 1 - 3
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -57,7 +57,7 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 100 # number of episodes
+trials = 1 # number of episodes
 cum_trials = 0
 
 stop = 20
@@ -395,8 +395,8 @@ plt.legend()
 # fig, (ax1) = plt.subplots(1)
 
 plt.figure()
-plt.plot(xs, base_wait_ys, label='Wait time of Q-table')
-plt.plot(xs, wait_ys, label='Wait time of baseline')
+plt.plot(xs, wait_ys, label='Wait time of Q-table')
+plt.plot(xs, base_wait_ys, label='Wait time of baseline')
 if run_type == 1 or run_type == 2:
     plt.title('Wait time of dropoff intersection with run type R'+str(run_type))
 else:
@@ -406,8 +406,8 @@ plt.xlabel('Time (s)')
 plt.legend()
 
 plt.figure()
-plt.plot(xs, base_wait2_ys, label='Wait time of Q-table')
-plt.plot(xs, wait2_ys, label='Wait time of baseline')
+plt.plot(xs, wait2_ys, label='Wait time of Q-table')
+plt.plot(xs, base_wait2_ys, label='Wait time of baseline')
 if run_type == 1 or run_type == 2:
     plt.title('Wait time of Monterey intersection with run type R'+str(run_type))
 else:
