@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 4 # 1 (W), 2 (L+W), 3 (W*L), 4 (L)
+run_type = 3 # 1 (W), 2 (L+W), 3 (W*L), 4 (L)
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -65,14 +65,14 @@ omega = 3
 end = 3600
 wmax = 80
 
-# try:
-#     Q = np.load('q.npy')
-# except:
-Q = np.random.rand(wmax, wmax, wmax, 4)
-# try:
-#     Q2 = np.load('q2.npy')
-# except:
-Q2 = np.random.rand(wmax, wmax, wmax, wmax, 4)
+try:
+    Q = np.load('q.npy')
+except:
+    Q = np.random.rand(wmax, wmax, wmax, 4)
+try:
+    Q2 = np.load('q2.npy')
+except:
+    Q2 = np.random.rand(wmax, wmax, wmax, wmax, 4)
 epsilon = 0.05
 lr = 0.1
 gamma = 0.8
@@ -372,8 +372,8 @@ for t in range(trials): # number of episodes
         reward_ys[t-2] = reward
         reward2_ys[t-2] = reward2
     
-        # np.save('q', Q)
-        # np.save('q2', Q2)
+        np.save('q', Q)
+        np.save('q2', Q2)
 
     traci.close()
 
