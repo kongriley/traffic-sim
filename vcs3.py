@@ -7,7 +7,7 @@ else:
 
 gui = False # use gui??
 testing = False
-run_type = 3 # 1 - 3
+run_type = 1 # 1 - 3
 
 if gui:
     sumoBinary = "sumo-gui.exe"
@@ -57,7 +57,7 @@ def actionMax(total, arr):
 def argActionMax(total, arr):
     return np.argmax(arr[total[0], total[1], total[2], :])
 
-trials = 1 # number of episodes
+trials = 100 # number of episodes
 cum_trials = 0
 
 stop = 20
@@ -82,6 +82,7 @@ episode_xs = np.arange(trials)
 base_ys = np.zeros(end)
 enter_ys = np.zeros(end)
 wait_ys = np.zeros(end)
+wait2_ys = np.zeros(end)
 base_wait_ys = np.zeros(end)
 car_ys = np.zeros(end)
 reward_ys = np.zeros(trials)
