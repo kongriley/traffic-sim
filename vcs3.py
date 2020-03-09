@@ -82,9 +82,10 @@ episode_xs = np.arange(trials)
 base_ys = np.zeros(end)
 enter_ys = np.zeros(end)
 wait_ys = np.zeros(end)
+base_wait_ys = np.zeros(end)
 car_ys = np.zeros(end)
 reward_ys = np.zeros(trials)
-wait2_ys = np.zeros(end)
+base_wait2_ys = np.zeros(end)
 reward2_ys = np.zeros(trials)
 ys = np.zeros(end)
 
@@ -98,6 +99,7 @@ if not testing:
     trials += 2
 
 for t in range(trials): # number of episodes
+    print('Episode #'+t)
     # if t < 2:
     #     continue
     c = 0
@@ -220,6 +222,18 @@ for t in range(trials): # number of episodes
                 pcount += 1
                 traci.vehicle.setColor(car, (0, 255, 0))
         
+        waiting_cars = traci.lane.getLastStepVehicleIDs("drop1_1")+traci.lane.getLastStepVehicleIDs("drop2_0")
+        waiting_people = traci.edge.getLastStepPersonIDs("ped3")
+        wait_time = 0
+        for curr in waiting_cars:
+            wait_time += traci.vehicle.getWaitingTime(curr)
+        for curr in waiting_people:
+            wait_time += traci.person.getWaitingTime(curr)
+        
+        waiting_cars2 = traci.edge.getLastStepVehicleIDs("sin")+traci.edge.getLastStepVehicleIDs("win")+traci.edge.getLastStepVehicleIDs("ein")+traci.edge.getLastStepVehicleIDs("e21")
+        wait_time2 = 0
+        for curr in waiting_cars2:
+            wait_time2 += traci.vehicle.getWaitingTime(curr)
         
         if t == 0 and testing == False:
             pass
@@ -234,13 +248,7 @@ for t in range(trials): # number of episodes
             setLight(q1, q2, qp)
         else: 
             # traffic light WITH Q-LEARNING!
-            waiting_cars = traci.lane.getLastStepVehicleIDs("drop1_1")+traci.lane.getLastStepVehicleIDs("drop2_0")
-            waiting_people = traci.edge.getLastStepPersonIDs("ped3")
-            wait_time = 0
-            for curr in waiting_cars:
-                wait_time += traci.vehicle.getWaitingTime(curr)
-            for curr in waiting_people:
-                wait_time += traci.person.getWaitingTime(curr)
+            
             
             num_cars = len(waiting_cars+waiting_people)
             if run_type == 1:
@@ -250,6 +258,9 @@ for t in range(trials): # number of episodes
             elif run_type == 3:
                 # num_cars2 /= (traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
                 reward = -(wait_time*num_cars) # reward = total waiting time of all people/cars
+            
+            if wait_time > 50:
+                reward *= 50 - wait_time
 
             state_tuple = [traci.lane.getLastStepVehicleNumber("drop1_1"), traci.lane.getLastStepVehicleNumber("drop2_0"), getPed(':jun_c0')]
             
@@ -273,10 +284,7 @@ for t in range(trials): # number of episodes
             
             ### monterey ###
 
-            waiting_cars2 = traci.edge.getLastStepVehicleIDs("sin")+traci.edge.getLastStepVehicleIDs("win")+traci.edge.getLastStepVehicleIDs("ein")+traci.edge.getLastStepVehicleIDs("e21")
-            wait_time2 = 0
-            for curr in waiting_cars2:
-                wait_time2 += traci.vehicle.getWaitingTime(curr)
+            
 
             num_cars2 = len(waiting_cars2)
             if run_type == 1:
@@ -286,6 +294,9 @@ for t in range(trials): # number of episodes
             elif run_type == 3:
                 num_cars2 /= (traci.lane.getLength("sin_0")+traci.lane.getLength("win_0")+traci.lane.getLength("ein_0")+traci.lane.getLength("e21_0"))
                 reward2 = -(wait_time2*num_cars2) # reward = total waiting time of all people/cars
+            
+            if wait_time2 > 50:
+                reward2 *= 50 - wait_time2
 
             state_tuple2 = [traci.edge.getLastStepVehicleNumber("sin"),traci.edge.getLastStepVehicleNumber("win"),traci.edge.getLastStepVehicleNumber("ein"),traci.edge.getLastStepVehicleNumber("e21")]
             
@@ -334,6 +345,10 @@ for t in range(trials): # number of episodes
         
         if t == 0 and testing == False:
             base_ys[step] = pcount
+            if len(waiting_cars) > 0:
+                base_wait_ys[step] = wait_time/len(waiting_cars)
+            if len(waiting_cars2) > 0:
+                base_wait2_ys[step] = wait_time2/len(waiting_cars2)
         elif t == 1 and testing == False:
             enter_ys[step] = pcount
         else: 
@@ -379,12 +394,23 @@ plt.legend()
 # fig, (ax1) = plt.subplots(1)
 
 plt.figure()
-plt.plot(xs, wait_ys, label='Wait time of dropoff Q-table')
-plt.plot(xs, wait2_ys, label='Wait time of Monterey Q-table')
+plt.plot(xs, base_wait_ys, label='Wait time of Q-table')
+plt.plot(xs, wait_ys, label='Wait time of baseline')
 if run_type == 1 or run_type == 2:
-    plt.title('Wait time with run type R'+str(run_type))
+    plt.title('Wait time of dropoff intersection with run type R'+str(run_type))
 else:
-    plt.title('Wait time with novel run type')
+    plt.title('Wait time of dropoff intersection with novel run type')
+plt.ylabel('Wait time (s)')
+plt.xlabel('Time (s)')
+plt.legend()
+
+plt.figure()
+plt.plot(xs, base_wait2_ys, label='Wait time of Q-table')
+plt.plot(xs, wait2_ys, label='Wait time of baseline')
+if run_type == 1 or run_type == 2:
+    plt.title('Wait time of Monterey intersection with run type R'+str(run_type))
+else:
+    plt.title('Wait time of Monterey intersection with novel run type')
 plt.ylabel('Wait time (s)')
 plt.xlabel('Time (s)')
 plt.legend()
