@@ -1,5 +1,4 @@
-# traffic-sim
-## Improving School Campus Traffic Flow Through Dynamic Simulation Modeling and Machine Learning
+# traffic-sim: Improving School Campus Traffic Flow Through Dynamic Simulation Modeling and Machine Learning
 
 This is a series of programs designed to simulate a typical school day applied to different traffic protocols. It utilizes [SUMO](https://sumo.dlr.de/docs/index.html) as a simulation program.
 
@@ -21,3 +20,8 @@ This is a series of programs designed to simulate a typical school day applied t
 1. Run vcs3.py to open SUMO-GUI. 
 2. Adjust the delay to 50ms and change the visualization from "standard" to "real world". 
 3. Click the play button to run the simulation!
+
+## Output
+The code will output 12 graphs: 3 for each run type.
+Each set of 3 graphs includes a comparison of car flow and wait times with the baseline.
+Additionally, the code will store the queue length and wait time for each run type.
